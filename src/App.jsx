@@ -18,8 +18,8 @@ function App() {
     const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/chat`, { prompt });
     const data = res.data.response;
 
-    // Check if it's HTML chart or plain text
-    if (typeof data === 'string' && data.startsWith('<html')) {
+    // Simple heuristic: check if it contains full HTML
+    if (typeof data === 'string' && data.includes('<html')) {
       setHtmlChart(data);
       setResponse("");
     } else {
@@ -51,8 +51,9 @@ function App() {
 
         {htmlChart && (
           <div
-            style={{ marginTop: '2rem' }}
+            key={Date.now()}  // Forces re-render on new chart
             dangerouslySetInnerHTML={{ __html: htmlChart }}
+            style={{ marginTop: '2rem' }}
           />
         )}
       </div>
