@@ -29,15 +29,16 @@ function App() {
       alert("Please enter a prompt");
       return;
     }
+
     try {
       const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/chat`, { prompt });
-
       const { type, data } = res.data;
+      console.log("Backend response:", res.data); // 🔍 Helpful debug
 
-      if (type === "plot") {
+      if (type === "plot" && data?.data && data?.layout) {
         setPlotData(data);
         setResponse("");
-      } else if (type === "text") {
+      } else if (type === "text" && typeof data === "string") {
         setResponse(data);
         setPlotData(null);
       } else {
@@ -57,7 +58,7 @@ function App() {
       <input
         type="file"
         onChange={(e) => setFile(e.target.files[0])}
-        accept=".csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        accept=".csv, .xls, .xlsx"
       />
       <button onClick={handleFileUpload} style={{ marginLeft: "1rem" }}>
         Upload
