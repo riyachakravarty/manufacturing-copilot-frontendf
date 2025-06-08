@@ -31,16 +31,19 @@ function App() {
     }
     try {
       const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/chat`, { prompt });
+
       const data = res.data.response;
 
-      try {
-        // Try to parse response as JSON plot
-        const fig = JSON.parse(data);
-        setPlotData(fig);
+      // If backend sends JSON object for plot
+      if (data && typeof data === "object" && data.data && data.layout) {
+        setPlotData(data);
         setResponse("");
-      } catch (err) {
-        // If parsing fails, treat as plain text response
+      } else if (typeof data === "string") {
+        // If plain text response
         setResponse(data);
+        setPlotData(null);
+      } else {
+        setResponse("Unexpected response format");
         setPlotData(null);
       }
     } catch (error) {
@@ -85,7 +88,7 @@ function App() {
             data={plotData.data}
             layout={plotData.layout}
             config={{ responsive: true }}
-            style={{ marginTop: "2rem" }}
+            style={{ marginTop: "2rem", width: "100%", height: "600px" }}
           />
         )}
       </div>
