@@ -1,59 +1,91 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
+import axios from "axios";
+import Plot from "react-plotly.js";
 
 function App() {
   const [file, setFile] = useState(null);
   const [prompt, setPrompt] = useState("");
   const [response, setResponse] = useState("");
-  const [htmlChart, setHtmlChart] = useState("");
+  const [plotData, setPlotData] = useState(null);
 
   const handleFileUpload = async () => {
-    const formData = new FormData();
-    formData.append("file", file);
-    await axios.post(`${process.env.REACT_APP_BACKEND_URL}/upload`, formData);
-    alert("File uploaded");
+    if (!file) {
+      alert("Please select a file first.");
+      return;
+    }
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/upload`, formData);
+      alert("File uploaded successfully");
+    } catch (error) {
+      alert("File upload failed");
+      console.error(error);
+    }
   };
 
   const handleChat = async () => {
-    const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/chat`, { prompt });
-    const data = res.data.response;
+    if (!prompt.trim()) {
+      alert("Please enter a prompt");
+      return;
+    }
+    try {
+      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/chat`, { prompt });
+      const data = res.data.response;
 
-    // Simple heuristic: check if it contains full HTML
-    if (typeof data === 'string' && data.includes('<html')) {
-      setHtmlChart(data);
-      setResponse("");
-    } else {
-      setResponse(data);
-      setHtmlChart("");
+      try {
+        // Try to parse response as JSON plot
+        const fig = JSON.parse(data);
+        setPlotData(fig);
+        setResponse("");
+      } catch (err) {
+        // If parsing fails, treat as plain text response
+        setResponse(data);
+        setPlotData(null);
+      }
+    } catch (error) {
+      alert("Request failed");
+      console.error(error);
     }
   };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '800px', margin: 'auto' }}>
+    <div style={{ padding: "2rem", maxWidth: "800px", margin: "auto" }}>
       <h1>Manufacturing Co-Pilot</h1>
 
-      <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-      <button onClick={handleFileUpload} style={{ marginLeft: '1rem' }}>Upload</button>
+      <input
+        type="file"
+        onChange={(e) => setFile(e.target.files[0])}
+        accept=".csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      />
+      <button onClick={handleFileUpload} style={{ marginLeft: "1rem" }}>
+        Upload
+      </button>
 
-      <div style={{ marginTop: '2rem' }}>
+      <div style={{ marginTop: "2rem" }}>
         <input
           type="text"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder="Ask your data..."
-          style={{ width: '100%', padding: '0.5rem' }}
+          style={{ width: "100%", padding: "0.5rem" }}
         />
-        <button onClick={handleChat} style={{ marginTop: '1rem' }}>Send</button>
+        <button onClick={handleChat} style={{ marginTop: "1rem" }}>
+          Send
+        </button>
 
         {response && (
-          <pre style={{ marginTop: '1rem', background: '#f0f0f0', padding: '1rem' }}>{response}</pre>
+          <pre style={{ marginTop: "1rem", background: "#f0f0f0", padding: "1rem" }}>
+            {response}
+          </pre>
         )}
 
-        {htmlChart && (
-          <div
-            key={Date.now()}  // Forces re-render on new chart
-            dangerouslySetInnerHTML={{ __html: htmlChart }}
-            style={{ marginTop: '2rem' }}
+        {plotData && (
+          <Plot
+            data={plotData.data}
+            layout={plotData.layout}
+            config={{ responsive: true }}
+            style={{ marginTop: "2rem" }}
           />
         )}
       </div>
