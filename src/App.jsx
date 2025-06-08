@@ -32,14 +32,12 @@ function App() {
     try {
       const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/chat`, { prompt });
 
-      const data = res.data.response;
+      const { type, data } = res.data;
 
-      // If backend sends JSON object for plot
-      if (data && typeof data === "object" && data.data && data.layout) {
+      if (type === "plot") {
         setPlotData(data);
         setResponse("");
-      } else if (typeof data === "string") {
-        // If plain text response
+      } else if (type === "text") {
         setResponse(data);
         setPlotData(null);
       } else {
