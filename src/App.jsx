@@ -16,8 +16,12 @@ function App() {
 
   useEffect(() => {
     const fetchColumns = async () => {
-      const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/get_columns`);
-      setColumns(res.data.columns || []);
+      try {
+        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/get_columns`);
+        setColumns(res.data.columns || []);
+      } catch (error) {
+        console.error("Error fetching columns:", error);
+      }
     };
     fetchColumns();
   }, []);
@@ -26,8 +30,13 @@ function App() {
     if (!file) return alert("Please select a file first.");
     const formData = new FormData();
     formData.append("file", file);
-    await axios.post(`${process.env.REACT_APP_BACKEND_URL}/upload`, formData);
-    alert("File uploaded successfully");
+    try {
+      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/upload`, formData);
+      alert("File uploaded successfully");
+    } catch (error) {
+      alert("Upload failed");
+      console.error(error);
+    }
   };
 
   const handlePrompt = async (prompt) => {
@@ -56,18 +65,31 @@ function App() {
   };
 
   const loadMissingIntervals = async () => {
-    const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/missing_datetime_intervals`);
-    setIntervals(res.data.intervals);
+    try {
+      const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/missing_datetime_intervals`);
+      setIntervals(res.data.intervals);
+    } catch (error) {
+      alert("Failed to load intervals");
+      console.error(error);
+    }
   };
 
   const applyTreatment = async () => {
+    if (!selectedColumn || selectedIntervals.length === 0 || !treatmentMethod) {
+      return alert("Please select a column, interval(s), and treatment method.");
+    }
     const payload = {
       column: selectedColumn,
       intervals: selectedIntervals,
       method: treatmentMethod,
     };
-    await axios.post(`${process.env.REACT_APP_BACKEND_URL}/apply_treatment`, payload);
-    alert("Treatment applied successfully");
+    try {
+      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/apply_treatment`, payload);
+      alert("Treatment applied successfully");
+    } catch (error) {
+      alert("Treatment failed");
+      console.error(error);
+    }
   };
 
   const downloadFile = () => {
@@ -108,30 +130,33 @@ function App() {
           {treatmentType && (
             <>
               <button onClick={loadMissingIntervals}>Load Missing Intervals</button>
-              <div>
+              <div style={{ margin: "1rem 0" }}>
+                {intervals.length === 0 && <p>No missing intervals found.</p>}
                 {intervals.map((intvl, idx) => (
                   <div key={idx}>
-                    <input
-                      type="checkbox"
-                      value={JSON.stringify(intvl)}
-                      onChange={(e) => {
-                        const value = JSON.parse(e.target.value);
-                        setSelectedIntervals((prev) =>
-                          e.target.checked ? [...prev, value] : prev.filter(i => i.start !== value.start)
-                        );
-                      }}
-                    />
-                    {intvl.start} to {intvl.end}
+                    <label>
+                      <input
+                        type="checkbox"
+                        value={JSON.stringify(intvl)}
+                        onChange={(e) => {
+                          const value = JSON.parse(e.target.value);
+                          setSelectedIntervals((prev) =>
+                            e.target.checked ? [...prev, value] : prev.filter(i => i.start !== value.start)
+                          );
+                        }}
+                      />
+                      {intvl.start} to {intvl.end}
+                    </label>
                   </div>
                 ))}
               </div>
               <select onChange={(e) => setTreatmentMethod(e.target.value)} value={treatmentMethod}>
                 <option value="">Select Treatment</option>
-                <option value="delete">Delete rows</option>
-                <option value="forward_fill">Forward fill</option>
-                <option value="backward_fill">Backward fill</option>
-                <option value="mean">Mean</option>
-                <option value="median">Median</option>
+                <option value="Delete rows">Delete rows</option>
+                <option value="Forward fill">Forward fill</option>
+                <option value="Backward fill">Backward fill</option>
+                <option value="Mean">Mean</option>
+                <option value="Median">Median</option>
               </select>
               <button onClick={applyTreatment}>Apply Treatment</button>
               <button onClick={downloadFile}>Download Treated File</button>
