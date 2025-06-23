@@ -27,17 +27,24 @@ function App() {
   }, []);
 
   const handleFileUpload = async () => {
-    if (!file) return alert("Please select a file first.");
-    const formData = new FormData();
-    formData.append("file", file);
-    try {
-      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/upload`, formData);
-      alert("File uploaded successfully");
-    } catch (error) {
-      alert("Upload failed");
-      console.error(error);
-    }
-  };
+  if (!file) return alert("Please select a file first.");
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    await axios.post(`${process.env.REACT_APP_BACKEND_URL}/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      withCredentials: false // ❗️Explicitly set false to prevent preflight complications
+    });
+    alert("File uploaded successfully");
+  } catch (error) {
+    alert("Upload failed");
+    console.error("Upload error:", error);
+  }
+};
+
 
   const handlePrompt = async (prompt) => {
     try {
