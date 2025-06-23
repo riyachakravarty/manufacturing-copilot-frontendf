@@ -46,25 +46,35 @@ function App() {
 };
 
 
-  const handlePrompt = async (prompt) => {
-    try {
-      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/chat`, { prompt });
-      const { type, data } = res.data;
-      if (type === "plot") {
-        setPlotData(data);
-        setResponse("");
-      } else if (type === "text") {
-        setResponse(data);
-        setPlotData(null);
-      } else {
-        setResponse("Unexpected response format");
-        setPlotData(null);
+const handlePrompt = async (prompt) => {
+  try {
+    const res = await axios.post(
+      `${process.env.REACT_APP_BACKEND_URL}/chat`,
+      { prompt },
+      {
+        headers: {
+          "Content-Type": "application/json",   // ✅ REQUIRED!
+        },
+        withCredentials: false
       }
-    } catch (err) {
-      alert("Request failed");
-      console.error(err);
+    );
+    const { type, data } = res.data;
+    if (type === "plot") {
+      setPlotData(data);
+      setResponse("");
+    } else if (type === "text") {
+      setResponse(data);
+      setPlotData(null);
+    } else {
+      setResponse("Unexpected response format");
+      setPlotData(null);
     }
-  };
+  } catch (err) {
+    alert("Request failed");
+    console.error(err);
+  }
+};
+
 
   const handleAnalysis = () => {
   if (!selectedColumn || !analysisType) return;
