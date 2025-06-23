@@ -67,9 +67,11 @@ function App() {
   };
 
   const handleAnalysis = () => {
-    if (!selectedColumn || !analysisType) return;
-    handlePrompt(`${analysisType} analysis where selected variable is '${selectedColumn}'`);
-  };
+  if (!selectedColumn || !analysisType) return;
+  const prompt = `${analysisType} analysis where selected variable is '${selectedColumn}'`;
+  console.log("Sending prompt:", prompt); // ✅ ADD THIS
+  handlePrompt(prompt);
+};
 
   const loadMissingIntervals = async () => {
     try {
