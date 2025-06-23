@@ -106,86 +106,95 @@ function App() {
   };
 
   return (
-    <div style={{ padding: "2rem", maxWidth: "1000px", margin: "auto" }}>
-      <h1>Manufacturing Co-Pilot</h1>
+  <div style={{ padding: "2rem", maxWidth: "1000px", margin: "auto" }}>
+    <h1>Manufacturing Co-Pilot</h1>
 
-      <div>
-        <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-        <button onClick={handleFileUpload}>Upload</button>
-      </div>
-
-      <hr />
-
-      <div>
-        <button onClick={() => handlePrompt("summarize the data")}>Summarize Data</button>
-        <button onClick={() => setAnalysisType("variability")}>Variability Analysis</button>
-        <button onClick={() => setAnalysisType("missing value")}>Anomaly Analysis</button>
-        <button onClick={() => setTreatmentType("missing value")}>Anomaly Treatment</button>
-      </div>
-
-      {(analysisType || treatmentType) && (
-        <div style={{ marginTop: "1rem" }}>
-          <select onChange={(e) => setSelectedColumn(e.target.value)} value={selectedColumn}>
-            <option value="">Select Column</option>
-            {columns.map((col) => (
-              <option key={col} value={col}>{col}</option>
-            ))}
-          </select>
-
-          {analysisType && (
-            <button onClick={handleAnalysis}>Run Analysis</button>
-          )}
-
-          {treatmentType && (
-            <>
-              <button onClick={loadMissingIntervals}>Load Missing Intervals</button>
-              <div style={{ margin: "1rem 0" }}>
-                {intervals.length === 0 && <p>No missing intervals found.</p>}
-                {intervals.map((intvl, idx) => (
-                  <div key={idx}>
-                    <label>
-                      <input
-                        type="checkbox"
-                        value={JSON.stringify(intvl)}
-                        onChange={(e) => {
-                          const value = JSON.parse(e.target.value);
-                          setSelectedIntervals((prev) =>
-                            e.target.checked ? [...prev, value] : prev.filter(i => i.start !== value.start)
-                          );
-                        }}
-                      />
-                      {intvl.start} to {intvl.end}
-                    </label>
-                  </div>
-                ))}
-              </div>
-              <select onChange={(e) => setTreatmentMethod(e.target.value)} value={treatmentMethod}>
-                <option value="">Select Treatment</option>
-                <option value="Delete rows">Delete rows</option>
-                <option value="Forward fill">Forward fill</option>
-                <option value="Backward fill">Backward fill</option>
-                <option value="Mean">Mean</option>
-                <option value="Median">Median</option>
-              </select>
-              <button onClick={applyTreatment}>Apply Treatment</button>
-              <button onClick={downloadFile}>Download Treated File</button>
-            </>
-          )}
-        </div>
-      )}
-
-      {response && <pre>{response}</pre>}
-
-      {plotData && (
-        <Plot
-          data={plotData.data}
-          layout={plotData.layout}
-          config={{ responsive: true }}
-          style={{ marginTop: "2rem", width: "100%", height: "600px" }}
-        />
-      )}
+    <div>
+      <input type="file" onChange={(e) => setFile(e.target.files[0])} />
+      <button onClick={handleFileUpload}>Upload</button>
     </div>
-  );
-}
 
-export default App;
+    <hr />
+
+    <div>
+      <button onClick={() => handlePrompt("summarize the data")}>Summarize Data</button>
+      <button onClick={() => setAnalysisType("variability")}>Variability Analysis</button>
+
+      {/* ✅ Anomaly Analysis prompt is triggered directly */}
+      <button
+        onClick={() => {
+          if (!selectedColumn) return alert("Please select a column first.");
+          const prompt = `missing value analysis where selected variable is '${selectedColumn}'`;
+          console.log("Sending prompt:", prompt);
+          handlePrompt(prompt);
+        }}
+      >
+        Anomaly Analysis
+      </button>
+
+      <button onClick={() => setTreatmentType("missing value")}>Anomaly Treatment</button>
+    </div>
+
+    {(analysisType || treatmentType) && (
+      <div style={{ marginTop: "1rem" }}>
+        <select onChange={(e) => setSelectedColumn(e.target.value)} value={selectedColumn}>
+          <option value="">Select Column</option>
+          {columns.map((col) => (
+            <option key={col} value={col}>{col}</option>
+          ))}
+        </select>
+
+        {analysisType === "variability" && (
+          <button onClick={handleAnalysis}>Run Variability Analysis</button>
+        )}
+
+        {treatmentType && (
+          <>
+            <button onClick={loadMissingIntervals}>Load Missing Intervals</button>
+            <div style={{ margin: "1rem 0" }}>
+              {intervals.length === 0 && <p>No missing intervals found.</p>}
+              {intervals.map((intvl, idx) => (
+                <div key={idx}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      value={JSON.stringify(intvl)}
+                      onChange={(e) => {
+                        const value = JSON.parse(e.target.value);
+                        setSelectedIntervals((prev) =>
+                          e.target.checked ? [...prev, value] : prev.filter(i => i.start !== value.start)
+                        );
+                      }}
+                    />
+                    {intvl.start} to {intvl.end}
+                  </label>
+                </div>
+              ))}
+            </div>
+            <select onChange={(e) => setTreatmentMethod(e.target.value)} value={treatmentMethod}>
+              <option value="">Select Treatment</option>
+              <option value="Delete rows">Delete rows</option>
+              <option value="Forward fill">Forward fill</option>
+              <option value="Backward fill">Backward fill</option>
+              <option value="Mean">Mean</option>
+              <option value="Median">Median</option>
+            </select>
+            <button onClick={applyTreatment}>Apply Treatment</button>
+            <button onClick={downloadFile}>Download Treated File</button>
+          </>
+        )}
+      </div>
+    )}
+
+    {response && <pre>{response}</pre>}
+
+    {plotData && (
+      <Plot
+        data={plotData.data}
+        layout={plotData.layout}
+        config={{ responsive: true }}
+        style={{ marginTop: "2rem", width: "100%", height: "600px" }}
+      />
+    )}
+  </div>
+);
