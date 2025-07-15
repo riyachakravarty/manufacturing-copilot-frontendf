@@ -14,6 +14,10 @@ function App() {
   const [selectedIntervals, setSelectedIntervals] = useState([]);
   const [treatmentMethod, setTreatmentMethod] = useState("");
 
+  // New: for outlier method selection
+  const [showOutlierOptions, setShowOutlierOptions] = useState(false);
+  const [outlierMethod, setOutlierMethod] = useState("zscore");
+
   useEffect(() => {
     const fetchColumns = async () => {
       try {
@@ -27,61 +31,64 @@ function App() {
   }, []);
 
   const handleFileUpload = async () => {
-  if (!file) return alert("Please select a file first.");
-  const formData = new FormData();
-  formData.append("file", file);
+    if (!file) return alert("Please select a file first.");
+    const formData = new FormData();
+    formData.append("file", file);
 
-  try {
-    await axios.post(`${process.env.REACT_APP_BACKEND_URL}/upload`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      },
-      withCredentials: false // ❗️Explicitly set false to prevent preflight complications
-    });
-    alert("File uploaded successfully");
-  } catch (error) {
-    alert("Upload failed");
-    console.error("Upload error:", error);
-  }
-};
-
-
-const handlePrompt = async (prompt) => {
-  try {
-    const res = await axios.post(
-      `${process.env.REACT_APP_BACKEND_URL}/chat`,
-      { prompt },
-      {
+    try {
+      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/upload`, formData, {
         headers: {
-          "Content-Type": "application/json",   // ✅ REQUIRED!
+          "Content-Type": "multipart/form-data"
         },
         withCredentials: false
-      }
-    );
-    const { type, data } = res.data;
-    if (type === "plot") {
-      setPlotData(data);
-      setResponse("");
-    } else if (type === "text") {
-      setResponse(data);
-      setPlotData(null);
-    } else {
-      setResponse("Unexpected response format");
-      setPlotData(null);
+      });
+      alert("File uploaded successfully");
+    } catch (error) {
+      alert("Upload failed");
+      console.error("Upload error:", error);
     }
-  } catch (err) {
-    alert("Request failed");
-    console.error(err);
-  }
-};
+  };
 
+  const handlePrompt = async (prompt) => {
+    try {
+      const res = await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}/chat`,
+        { prompt },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: false,
+        }
+      );
+      const { type, data } = res.data;
+      if (type === "plot") {
+        setPlotData(data);
+        setResponse("");
+      } else if (type === "text") {
+        setResponse(data);
+        setPlotData(null);
+      } else {
+        setResponse("Unexpected response format");
+        setPlotData(null);
+      }
+    } catch (err) {
+      alert("Request failed");
+      console.error(err);
+    }
+  };
 
   const handleAnalysis = () => {
-  if (!selectedColumn || !analysisType) return;
-  const prompt = `${analysisType} analysis where selected variable is '${selectedColumn}'`;
-  console.log("Sending prompt:", prompt); // ✅ ADD THIS
-  handlePrompt(prompt);
-};
+    if (!selectedColumn || !analysisType) return;
+    const prompt = `${analysisType} analysis where selected variable is '${selectedColumn}'`;
+    handlePrompt(prompt);
+  };
+
+  const handleOutlierAnalysis = () => {
+    if (!selectedColumn) return alert("Please select a column.");
+    const prompt = `outlier analysis where selected variable is '${selectedColumn}' using ${outlierMethod}`;
+    handlePrompt(prompt);
+  };
 
   const loadMissingIntervals = async () => {
     try {
@@ -116,95 +123,108 @@ const handlePrompt = async (prompt) => {
   };
 
   return (
-  <div style={{ padding: "2rem", maxWidth: "1000px", margin: "auto" }}>
-    <h1>Manufacturing Co-Pilot</h1>
+    <div style={{ padding: "2rem", maxWidth: "1000px", margin: "auto" }}>
+      <h1>Manufacturing Co-Pilot</h1>
 
-    <div>
-      <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-      <button onClick={handleFileUpload}>Upload</button>
-    </div>
-
-    <hr />
-
-    <div>
-      <button onClick={() => handlePrompt("summarize the data")}>Summarize Data</button>
-      <button onClick={() => setAnalysisType("variability")}>Variability Analysis</button>
-
-      {/* ✅ Anomaly Analysis prompt is triggered directly */}
-      <button
-        onClick={() => {
-          if (!selectedColumn) return alert("Please select a column first.");
-          const prompt = `missing value analysis where selected variable is '${selectedColumn}'`;
-          console.log("Sending prompt:", prompt);
-          handlePrompt(prompt);
-        }}
-      >
-        Anomaly Analysis
-      </button>
-
-      <button onClick={() => setTreatmentType("missing value")}>Anomaly Treatment</button>
-    </div>
-
-    {(analysisType || treatmentType) && (
-      <div style={{ marginTop: "1rem" }}>
-        <select onChange={(e) => setSelectedColumn(e.target.value)} value={selectedColumn}>
-          <option value="">Select Column</option>
-          {columns.map((col) => (
-            <option key={col} value={col}>{col}</option>
-          ))}
-        </select>
-
-        {analysisType === "variability" && (
-          <button onClick={handleAnalysis}>Run Variability Analysis</button>
-        )}
-
-        {treatmentType && (
-          <>
-            <button onClick={loadMissingIntervals}>Load Missing Intervals</button>
-            <div style={{ margin: "1rem 0" }}>
-              {intervals.length === 0 && <p>No missing intervals found.</p>}
-              {intervals.map((intvl, idx) => (
-                <div key={idx}>
-                  <label>
-                    <input
-                      type="checkbox"
-                      value={JSON.stringify(intvl)}
-                      onChange={(e) => {
-                        const value = JSON.parse(e.target.value);
-                        setSelectedIntervals((prev) =>
-                          e.target.checked ? [...prev, value] : prev.filter(i => i.start !== value.start)
-                        );
-                      }}
-                    />
-                    {intvl.start} to {intvl.end}
-                  </label>
-                </div>
-              ))}
-            </div>
-            <select onChange={(e) => setTreatmentMethod(e.target.value)} value={treatmentMethod}>
-              <option value="">Select Treatment</option>
-              <option value="Delete rows">Delete rows</option>
-              <option value="Forward fill">Forward fill</option>
-              <option value="Backward fill">Backward fill</option>
-              <option value="Mean">Mean</option>
-              <option value="Median">Median</option>
-            </select>
-            <button onClick={applyTreatment}>Apply Treatment</button>
-            <button onClick={downloadFile}>Download Treated File</button>
-          </>
-        )}
+      <div>
+        <input type="file" onChange={(e) => setFile(e.target.files[0])} />
+        <button onClick={handleFileUpload}>Upload</button>
       </div>
-    )}
 
-    {response && <pre>{response}</pre>}
+      <hr />
 
-    {plotData && (
-      <Plot
-        data={plotData.data}
-        layout={plotData.layout}
-        config={{ responsive: true }}
-        style={{ marginTop: "2rem", width: "100%", height: "600px" }}
-      />
-    )}
-  </div>
-);
+      <div>
+        <button onClick={() => handlePrompt("summarize the data")}>Summarize Data</button>
+        <button onClick={() => setAnalysisType("variability")}>Variability Analysis</button>
+
+        <button
+          onClick={() => {
+            if (!selectedColumn) return alert("Please select a column first.");
+            const prompt = `missing value analysis where selected variable is '${selectedColumn}'`;
+            handlePrompt(prompt);
+          }}
+        >
+          Anomaly Analysis
+        </button>
+
+        <button onClick={() => setTreatmentType("missing value")}>Anomaly Treatment</button>
+
+        <button onClick={() => setShowOutlierOptions(true)}>Outlier Analysis</button>
+      </div>
+
+      {(analysisType || treatmentType || showOutlierOptions) && (
+        <div style={{ marginTop: "1rem" }}>
+          <select onChange={(e) => setSelectedColumn(e.target.value)} value={selectedColumn}>
+            <option value="">Select Column</option>
+            {columns.map((col) => (
+              <option key={col} value={col}>{col}</option>
+            ))}
+          </select>
+
+          {analysisType === "variability" && (
+            <button onClick={handleAnalysis}>Run Variability Analysis</button>
+          )}
+
+          {treatmentType && (
+            <>
+              <button onClick={loadMissingIntervals}>Load Missing Intervals</button>
+              <div style={{ margin: "1rem 0" }}>
+                {intervals.length === 0 && <p>No missing intervals found.</p>}
+                {intervals.map((intvl, idx) => (
+                  <div key={idx}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        value={JSON.stringify(intvl)}
+                        onChange={(e) => {
+                          const value = JSON.parse(e.target.value);
+                          setSelectedIntervals((prev) =>
+                            e.target.checked ? [...prev, value] : prev.filter(i => i.start !== value.start)
+                          );
+                        }}
+                      />
+                      {intvl.start} to {intvl.end}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              <select onChange={(e) => setTreatmentMethod(e.target.value)} value={treatmentMethod}>
+                <option value="">Select Treatment</option>
+                <option value="Delete rows">Delete rows</option>
+                <option value="Forward fill">Forward fill</option>
+                <option value="Backward fill">Backward fill</option>
+                <option value="Mean">Mean</option>
+                <option value="Median">Median</option>
+              </select>
+              <button onClick={applyTreatment}>Apply Treatment</button>
+              <button onClick={downloadFile}>Download Treated File</button>
+            </>
+          )}
+
+          {showOutlierOptions && (
+            <>
+              <select onChange={(e) => setOutlierMethod(e.target.value)} value={outlierMethod}>
+                <option value="zscore">Z-score</option>
+                <option value="iqr">IQR</option>
+              </select>
+              <button onClick={handleOutlierAnalysis}>Run Outlier Analysis</button>
+            </>
+          )}
+        </div>
+      )}
+
+      {response && <pre>{response}</pre>}
+
+      {plotData && (
+        <Plot
+          data={plotData.data}
+          layout={plotData.layout}
+          config={{ responsive: true }}
+          style={{ marginTop: "2rem", width: "100%", height: "600px" }}
+        />
+      )}
+    </div>
+  );
+}
+
+export default App;
