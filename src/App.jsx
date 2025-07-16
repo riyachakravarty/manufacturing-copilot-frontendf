@@ -13,8 +13,6 @@ function App() {
   const [intervals, setIntervals] = useState([]);
   const [selectedIntervals, setSelectedIntervals] = useState([]);
   const [treatmentMethod, setTreatmentMethod] = useState("");
-
-  // New: for outlier method selection
   const [showOutlierOptions, setShowOutlierOptions] = useState(false);
   const [outlierMethod, setOutlierMethod] = useState("zscore");
 
@@ -56,9 +54,9 @@ function App() {
         { prompt },
         {
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type": "application/json"
           },
-          withCredentials: false,
+          withCredentials: false
         }
       );
       const { type, data } = res.data;
@@ -107,7 +105,7 @@ function App() {
     const payload = {
       column: selectedColumn,
       intervals: selectedIntervals,
-      method: treatmentMethod,
+      method: treatmentMethod
     };
     try {
       await axios.post(`${process.env.REACT_APP_BACKEND_URL}/apply_treatment`, payload);
@@ -118,8 +116,25 @@ function App() {
     }
   };
 
-  const downloadFile = () => {
-    window.open(`${process.env.REACT_APP_BACKEND_URL}/download`, "_blank");
+  const downloadFile = async () => {
+    try {
+      const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/download`, {
+        responseType: "blob"
+      });
+
+      const blob = new Blob([res.data], { type: "text/csv;charset=utf-8;" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "treated_file.csv");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      alert("Failed to download file");
+      console.error("Download error:", error);
+    }
   };
 
   return (
@@ -173,58 +188,3 @@ function App() {
                 {intervals.map((intvl, idx) => (
                   <div key={idx}>
                     <label>
-                      <input
-                        type="checkbox"
-                        value={JSON.stringify(intvl)}
-                        onChange={(e) => {
-                          const value = JSON.parse(e.target.value);
-                          setSelectedIntervals((prev) =>
-                            e.target.checked ? [...prev, value] : prev.filter(i => i.start !== value.start)
-                          );
-                        }}
-                      />
-                      {intvl.start} to {intvl.end}
-                    </label>
-                  </div>
-                ))}
-              </div>
-              <select onChange={(e) => setTreatmentMethod(e.target.value)} value={treatmentMethod}>
-                <option value="">Select Treatment</option>
-                <option value="Delete rows">Delete rows</option>
-                <option value="Forward fill">Forward fill</option>
-                <option value="Backward fill">Backward fill</option>
-                <option value="Mean">Mean</option>
-                <option value="Median">Median</option>
-              </select>
-              <button onClick={applyTreatment}>Apply Treatment</button>
-              <button onClick={downloadFile}>Download Treated File</button>
-            </>
-          )}
-
-          {showOutlierOptions && (
-            <>
-              <select onChange={(e) => setOutlierMethod(e.target.value)} value={outlierMethod}>
-                <option value="zscore">Z-score</option>
-                <option value="iqr">IQR</option>
-              </select>
-              <button onClick={handleOutlierAnalysis}>Run Outlier Analysis</button>
-            </>
-          )}
-        </div>
-      )}
-
-      {response && <pre>{response}</pre>}
-
-      {plotData && (
-        <Plot
-          data={plotData.data}
-          layout={plotData.layout}
-          config={{ responsive: true }}
-          style={{ marginTop: "2rem", width: "100%", height: "600px" }}
-        />
-      )}
-    </div>
-  );
-}
-
-export default App;
