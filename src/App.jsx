@@ -7,7 +7,7 @@ function App() {
   const [response, setResponse] = useState("");
   const [plotData, setPlotData] = useState(null);
   const [columns, setColumns] = useState([]);
-  const [selectedColumn, setSelectedColumn] = useState("");
+  const [selectedColumns, setSelectedColumns] = useState([]);
   const [analysisType, setAnalysisType] = useState("");
   const [treatmentType, setTreatmentType] = useState("");
   const [intervals, setIntervals] = useState([]);
@@ -77,14 +77,14 @@ function App() {
   };
 
   const handleAnalysis = () => {
-    if (!selectedColumn || !analysisType) return;
-    const prompt = `${analysisType} analysis where selected variable is '${selectedColumn}'`;
+    if (selectedColumns.length === 0 || !analysisType) return;
+    const prompt = `${analysisType} analysis where selected variable is '${selectedColumns[0]}'`;
     handlePrompt(prompt);
   };
 
   const handleOutlierAnalysis = () => {
-    if (!selectedColumn) return alert("Please select a column.");
-    const prompt = `outlier analysis where selected variable is '${selectedColumn}' using ${outlierMethod}`;
+    if (selectedColumns.length === 0) return alert("Please select a column.");
+    const prompt = `outlier analysis where selected variable is '${selectedColumns[0]}' using ${outlierMethod}`;
     handlePrompt(prompt);
   };
 
@@ -99,11 +99,11 @@ function App() {
   };
 
   const applyTreatment = async () => {
-    if (!selectedColumn || selectedIntervals.length === 0 || !treatmentMethod) {
-      return alert("Please select a column, interval(s), and treatment method.");
+    if (selectedColumns.length === 0 || selectedIntervals.length === 0 || !treatmentMethod) {
+      return alert("Please select column(s), interval(s), and treatment method.");
     }
     const payload = {
-      column: selectedColumn,
+      columns: selectedColumns,
       intervals: selectedIntervals,
       method: treatmentMethod
     };
@@ -154,8 +154,8 @@ function App() {
 
         <button
           onClick={() => {
-            if (!selectedColumn) return alert("Please select a column first.");
-            const prompt = `missing value analysis where selected variable is '${selectedColumn}'`;
+            if (selectedColumns.length === 0) return alert("Please select a column first.");
+            const prompt = `missing value analysis where selected variable is '${selectedColumns[0]}'`;
             handlePrompt(prompt);
           }}
         >
@@ -169,8 +169,8 @@ function App() {
 
       {(analysisType || treatmentType || showOutlierOptions) && (
         <div style={{ marginTop: "1rem" }}>
-          <select onChange={(e) => setSelectedColumn(e.target.value)} value={selectedColumn}>
-            <option value="">Select Column</option>
+          <select multiple onChange={(e) => setSelectedColumns(Array.from(e.target.selectedOptions, opt => opt.value))} value={selectedColumns}>
+            <option value="" disabled>Select Column(s)</option>
             {columns.map((col) => (
               <option key={col} value={col}>{col}</option>
             ))}
@@ -184,7 +184,48 @@ function App() {
             <>
               <button onClick={loadMissingIntervals}>Load Missing Intervals</button>
               <div style={{ margin: "1rem 0" }}>
-                {intervals.length === 0 && <p>No missing intervals found.</p>}
-                {intervals.map((intvl, idx) => (
-                  <div key={idx}>
-                    <label>
+                <select multiple onChange={(e) => setSelectedIntervals(Array.from(e.target.selectedOptions, opt => JSON.parse(opt.value)))}>
+                  {intervals.map((intvl, idx) => (
+                    <option key={idx} value={JSON.stringify(intvl)}>
+                      {intvl.start} to {intvl.end}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <select onChange={(e) => setTreatmentMethod(e.target.value)} value={treatmentMethod}>
+                <option value="">Select Treatment Method</option>
+                <option value="Delete rows">Delete rows</option>
+                <option value="Forward fill">Forward fill</option>
+                <option value="Backward fill">Backward fill</option>
+                <option value="Mean">Mean</option>
+                <option value="Median">Median</option>
+              </select>
+              <button onClick={applyTreatment}>Apply Treatment</button>
+            </>
+          )}
+
+          {showOutlierOptions && (
+            <>
+              <select value={outlierMethod} onChange={(e) => setOutlierMethod(e.target.value)}>
+                <option value="zscore">Z-Score</option>
+                <option value="iqr">IQR</option>
+              </select>
+              <button onClick={handleOutlierAnalysis}>Run Outlier Analysis</button>
+            </>
+          )}
+        </div>
+      )}
+
+      <div>
+        <button onClick={downloadFile}>Download Treated File</button>
+      </div>
+
+      <div style={{ marginTop: "2rem" }}>
+        {response && <pre>{response}</pre>}
+        {plotData && <Plot data={plotData.data} layout={plotData.layout} />}
+      </div>
+    </div>
+  );
+}
+
+export default App;
