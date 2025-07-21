@@ -35,10 +35,7 @@ function App() {
 
     try {
       await axios.post(`${process.env.REACT_APP_BACKEND_URL}/upload`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data"
-        },
-        withCredentials: false
+        headers: { "Content-Type": "multipart/form-data" }
       });
       alert("File uploaded successfully");
     } catch (error) {
@@ -52,12 +49,7 @@ function App() {
       const res = await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/chat`,
         { prompt },
-        {
-          headers: {
-            "Content-Type": "application/json"
-          },
-          withCredentials: false
-        }
+        { headers: { "Content-Type": "application/json" } }
       );
       const { type, data } = res.data;
       if (type === "plot") {
@@ -121,7 +113,6 @@ function App() {
       const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/download`, {
         responseType: "blob"
       });
-
       const blob = new Blob([res.data], { type: "text/csv;charset=utf-8;" });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -135,6 +126,14 @@ function App() {
       alert("Failed to download file");
       console.error("Download error:", error);
     }
+  };
+
+  const handleSelectAllColumns = () => {
+    setSelectedColumns(columns);
+  };
+
+  const handleSelectAllIntervals = () => {
+    setSelectedIntervals(intervals);
   };
 
   return (
@@ -151,7 +150,6 @@ function App() {
       <div>
         <button onClick={() => handlePrompt("summarize the data")}>Summarize Data</button>
         <button onClick={() => setAnalysisType("variability")}>Variability Analysis</button>
-
         <button
           onClick={() => {
             if (selectedColumns.length === 0) return alert("Please select a column first.");
@@ -161,20 +159,26 @@ function App() {
         >
           Anomaly Analysis
         </button>
-
         <button onClick={() => setTreatmentType("missing value")}>Anomaly Treatment</button>
-
         <button onClick={() => setShowOutlierOptions(true)}>Outlier Analysis</button>
       </div>
 
       {(analysisType || treatmentType || showOutlierOptions) && (
         <div style={{ marginTop: "1rem" }}>
-          <select multiple onChange={(e) => setSelectedColumns(Array.from(e.target.selectedOptions, opt => opt.value))} value={selectedColumns}>
-            <option value="" disabled>Select Column(s)</option>
-            {columns.map((col) => (
-              <option key={col} value={col}>{col}</option>
-            ))}
-          </select>
+          <div>
+            <label>Select Column(s):</label>
+            <select
+              multiple
+              onChange={(e) => setSelectedColumns(Array.from(e.target.selectedOptions, opt => opt.value))}
+              value={selectedColumns}
+              style={{ width: "100%", height: "100px" }}
+            >
+              {columns.map((col) => (
+                <option key={col} value={col}>{col}</option>
+              ))}
+            </select>
+            <button onClick={handleSelectAllColumns}>Select All Columns</button>
+          </div>
 
           {analysisType === "variability" && (
             <button onClick={handleAnalysis}>Run Variability Analysis</button>
@@ -184,14 +188,21 @@ function App() {
             <>
               <button onClick={loadMissingIntervals}>Load Missing Intervals</button>
               <div style={{ margin: "1rem 0" }}>
-                <select multiple onChange={(e) => setSelectedIntervals(Array.from(e.target.selectedOptions, opt => JSON.parse(opt.value)))}>
+                <label>Select Interval(s):</label>
+                <select
+                  multiple
+                  onChange={(e) => setSelectedIntervals(Array.from(e.target.selectedOptions, opt => JSON.parse(opt.value)))}
+                  style={{ width: "100%", height: "100px" }}
+                >
                   {intervals.map((intvl, idx) => (
                     <option key={idx} value={JSON.stringify(intvl)}>
                       {intvl.start} to {intvl.end}
                     </option>
                   ))}
                 </select>
+                <button onClick={handleSelectAllIntervals}>Select All Intervals</button>
               </div>
+
               <select onChange={(e) => setTreatmentMethod(e.target.value)} value={treatmentMethod}>
                 <option value="">Select Treatment Method</option>
                 <option value="Delete rows">Delete rows</option>
