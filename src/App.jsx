@@ -122,34 +122,17 @@ function App() {
     }
   };
 
-  const toggleColumn = (col) => {
-    setSelectedColumns(prev =>
-      prev.includes(col) ? prev.filter(c => c !== col) : [...prev, col]
+  const toggleCheckbox = (item, selectedItems, setSelectedItems) => {
+    setSelectedItems(prev =>
+      prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
     );
   };
 
-  const toggleAllColumns = () => {
-    if (selectedColumns.length === columns.length) {
-      setSelectedColumns([]);
+  const toggleAllCheckboxes = (items, selectedItems, setSelectedItems) => {
+    if (selectedItems.length === items.length) {
+      setSelectedItems([]);
     } else {
-      setSelectedColumns(columns);
-    }
-  };
-
-  const toggleInterval = (intvl) => {
-    const key = JSON.stringify(intvl);
-    setSelectedIntervals(prev =>
-      prev.some(i => JSON.stringify(i) === key)
-        ? prev.filter(i => JSON.stringify(i) !== key)
-        : [...prev, intvl]
-    );
-  };
-
-  const toggleAllIntervals = () => {
-    if (selectedIntervals.length === intervals.length) {
-      setSelectedIntervals([]);
-    } else {
-      setSelectedIntervals(intervals);
+      setSelectedItems(items);
     }
   };
 
@@ -188,7 +171,7 @@ function App() {
               <input
                 type="checkbox"
                 checked={selectedColumns.length === columns.length}
-                onChange={toggleAllColumns}
+                onChange={() => toggleAllCheckboxes(columns, selectedColumns, setSelectedColumns)}
               /> Select All
             </div>
             {columns.map(col => (
@@ -196,9 +179,8 @@ function App() {
                 <input
                   type="checkbox"
                   checked={selectedColumns.includes(col)}
-                  onChange={() => toggleColumn(col)}
-                />
-                {col}
+                  onChange={() => toggleCheckbox(col, selectedColumns, setSelectedColumns)}
+                /> {col}
               </div>
             ))}
           </div>
@@ -216,7 +198,7 @@ function App() {
                   <input
                     type="checkbox"
                     checked={selectedIntervals.length === intervals.length}
-                    onChange={toggleAllIntervals}
+                    onChange={() => toggleAllCheckboxes(intervals, selectedIntervals, setSelectedIntervals)}
                   /> Select All
                 </div>
                 {intervals.map((intvl, idx) => (
@@ -224,9 +206,8 @@ function App() {
                     <input
                       type="checkbox"
                       checked={selectedIntervals.some(i => JSON.stringify(i) === JSON.stringify(intvl))}
-                      onChange={() => toggleInterval(intvl)}
-                    />
-                    {intvl.start} to {intvl.end}
+                      onChange={() => toggleCheckbox(intvl, selectedIntervals, setSelectedIntervals)}
+                    /> {intvl.start} to {intvl.end}
                   </div>
                 ))}
               </div>
