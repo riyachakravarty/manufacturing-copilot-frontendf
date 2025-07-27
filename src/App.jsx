@@ -1,44 +1,32 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import Plot from "react-plotly.js";
 
 function App() {
   const [file, setFile] = useState(null);
+  const [response, setResponse] = useState("");
+  const [plotData, setPlotData] = useState(null);
   const [columns, setColumns] = useState([]);
-  const [intervals, setIntervals] = useState([]);
   const [selectedColumns, setSelectedColumns] = useState([]);
+  const [intervals, setIntervals] = useState([]);
   const [selectedIntervals, setSelectedIntervals] = useState([]);
-  const [selectAllColumns, setSelectAllColumns] = useState(false);
-  const [selectAllIntervals, setSelectAllIntervals] = useState(false);
-  const [method, setMethod] = useState("");
-
-  const fetchColumns = async () => {
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/get_columns`);
-      setColumns(res.data.columns || []);
-      setSelectedColumns([]); // Reset selection
-      setSelectAllColumns(false);
-    } catch (error) {
-      console.error("Error fetching columns:", error);
-    }
-  };
-
-  const fetchIntervals = async () => {
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/missing_datetime_intervals`);
-      setIntervals(res.data.intervals || []);
-      setSelectedIntervals([]);
-      setSelectAllIntervals(false);
-    } catch (error) {
-      console.error("Error fetching intervals:", error);
-    }
-  };
+  const [analysisType, setAnalysisType] = useState("");
+  const [treatmentType, setTreatmentType] = useState("");
+  const [treatmentMethod, setTreatmentMethod] = useState("");
+  const [showOutlierOptions, setShowOutlierOptions] = useState(false);
+  const [outlierMethod, setOutlierMethod] = useState("zscore");
 
   useEffect(() => {
+    const fetchColumns = async () => {
+      try {
+        const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/get_columns`);
+        setColumns(res.data.columns || []);
+      } catch (error) {
+        console.error("Error fetching columns:", error);
+      }
+    };
     fetchColumns();
-    fetchIntervals();
   }, []);
-
-  const handleFileChange = (e) => setFile(e.target.files[0]);
 
   const handleFileUpload = async () => {
     if (!file) return alert("Please select a file first.");
@@ -47,150 +35,233 @@ function App() {
     try {
       await axios.post(`${process.env.REACT_APP_BACKEND_URL}/upload`, formData);
       alert("File uploaded successfully");
-      await fetchColumns();     // 🔄 Update columns after file upload
-      await fetchIntervals();   // 🔄 Update intervals
     } catch (error) {
       alert("Upload failed");
       console.error("Upload error:", error);
     }
   };
 
-  const handleTreatmentApply = async () => {
-    if (selectedColumns.length === 0 || selectedIntervals.length === 0 || !method) {
-      return alert("Please select columns, intervals, and a treatment method.");
-    }
-
-    const payload = {
-      columns: selectedColumns,
-      intervals: selectedIntervals,
-      method,
-    };
-
+  const handlePrompt = async (prompt) => {
     try {
-      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/apply_treatment`, payload);
-      alert(res.data.message || "Treatment applied successfully");
-    } catch (error) {
-      alert("Treatment failed");
-      console.error("Treatment error:", error);
+      const res = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/chat`, { prompt });
+      const { type, data } = res.data;
+      if (type === "plot") {
+        setPlotData(data);
+        setResponse("");
+      } else if (type === "text") {
+        setResponse(data);
+        setPlotData(null);
+      } else {
+        setResponse("Unexpected response format");
+        setPlotData(null);
+      }
+    } catch (err) {
+      alert("Request failed");
+      console.error(err);
     }
   };
 
-  const handleDownload = async () => {
+  const handleAnalysis = () => {
+    if (selectedColumns.length === 0 || !analysisType) return;
+    const prompt = `${analysisType} analysis where selected variable is '${selectedColumns[0]}'`;
+    handlePrompt(prompt);
+  };
+
+  const handleOutlierAnalysis = () => {
+    if (selectedColumns.length === 0) return alert("Please select a column.");
+    const prompt = `outlier analysis where selected variable is '${selectedColumns[0]}' using ${outlierMethod}`;
+    handlePrompt(prompt);
+  };
+
+  const loadMissingIntervals = async () => {
+    try {
+      const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/missing_datetime_intervals`);
+      setIntervals(res.data.intervals || []);
+    } catch (error) {
+      alert("Failed to load intervals");
+      console.error(error);
+    }
+  };
+
+  const applyTreatment = async () => {
+    if (selectedColumns.length === 0 || selectedIntervals.length === 0 || !treatmentMethod) {
+      return alert("Please select column(s), interval(s), and treatment method.");
+    }
+    const payload = {
+      columns: selectedColumns,
+      intervals: selectedIntervals,
+      method: treatmentMethod
+    };
+    try {
+      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/apply_treatment`, payload);
+      alert("Treatment applied successfully");
+    } catch (error) {
+      alert("Treatment failed");
+      console.error(error);
+    }
+  };
+
+  const downloadFile = async () => {
     try {
       const res = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/download`, {
-        responseType: "blob",
+        responseType: "blob"
       });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+
+      const blob = new Blob([res.data], { type: "text/csv;charset=utf-8;" });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", "treated_file.csv");
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      alert("Download failed");
+      alert("Failed to download file");
       console.error("Download error:", error);
     }
   };
 
+  const toggleColumn = (col) => {
+    setSelectedColumns(prev =>
+      prev.includes(col) ? prev.filter(c => c !== col) : [...prev, col]
+    );
+  };
+
+  const toggleAllColumns = () => {
+    if (selectedColumns.length === columns.length) {
+      setSelectedColumns([]);
+    } else {
+      setSelectedColumns(columns);
+    }
+  };
+
+  const toggleInterval = (intvl) => {
+    const key = JSON.stringify(intvl);
+    setSelectedIntervals(prev =>
+      prev.some(i => JSON.stringify(i) === key)
+        ? prev.filter(i => JSON.stringify(i) !== key)
+        : [...prev, intvl]
+    );
+  };
+
+  const toggleAllIntervals = () => {
+    if (selectedIntervals.length === intervals.length) {
+      setSelectedIntervals([]);
+    } else {
+      setSelectedIntervals(intervals);
+    }
+  };
+
   return (
-    <div style={{ padding: "20px" }}>
-      <h2>Manufacturing Co-Pilot</h2>
+    <div style={{ padding: "2rem", maxWidth: "1000px", margin: "auto" }}>
+      <h1>Manufacturing Co-Pilot</h1>
 
       <div>
-        <input type="file" onChange={handleFileChange} />
+        <input type="file" onChange={(e) => setFile(e.target.files[0])} />
         <button onClick={handleFileUpload}>Upload</button>
       </div>
 
       <hr />
 
       <div>
-        <h3>Select Columns</h3>
-        <label>
-          <input
-            type="checkbox"
-            checked={selectAllColumns}
-            onChange={(e) => {
-              setSelectAllColumns(e.target.checked);
-              setSelectedColumns(e.target.checked ? [...columns] : []);
-            }}
-          />
-          Select All
-        </label>
-        <div style={{ maxHeight: "150px", overflowY: "auto", border: "1px solid #ccc", padding: "5px" }}>
-          {columns.map((col) => (
-            <label key={col} style={{ display: "block" }}>
+        <button onClick={() => handlePrompt("summarize the data")}>Summarize Data</button>
+        <button onClick={() => setAnalysisType("variability")}>Variability Analysis</button>
+        <button
+          onClick={() => {
+            if (selectedColumns.length === 0) return alert("Please select a column first.");
+            const prompt = `missing value analysis where selected variable is '${selectedColumns[0]}'`;
+            handlePrompt(prompt);
+          }}
+        >
+          Anomaly Analysis
+        </button>
+        <button onClick={() => setTreatmentType("missing value")}>Anomaly Treatment</button>
+        <button onClick={() => setShowOutlierOptions(true)}>Outlier Analysis</button>
+      </div>
+
+      {(analysisType || treatmentType || showOutlierOptions) && (
+        <div style={{ marginTop: "1rem" }}>
+          <div>
+            <strong>Select Column(s):</strong>
+            <div>
               <input
                 type="checkbox"
-                checked={selectedColumns.includes(col)}
-                onChange={() => {
-                  const newSelection = selectedColumns.includes(col)
-                    ? selectedColumns.filter((c) => c !== col)
-                    : [...selectedColumns, col];
-                  setSelectedColumns(newSelection);
-                  setSelectAllColumns(newSelection.length === columns.length);
-                }}
-              />
-              {col}
-            </label>
-          ))}
+                checked={selectedColumns.length === columns.length}
+                onChange={toggleAllColumns}
+              /> Select All
+            </div>
+            {columns.map(col => (
+              <div key={col}>
+                <input
+                  type="checkbox"
+                  checked={selectedColumns.includes(col)}
+                  onChange={() => toggleColumn(col)}
+                />
+                {col}
+              </div>
+            ))}
+          </div>
+
+          {analysisType === "variability" && (
+            <button onClick={handleAnalysis}>Run Variability Analysis</button>
+          )}
+
+          {treatmentType && (
+            <>
+              <button onClick={loadMissingIntervals}>Load Missing Intervals</button>
+              <div style={{ margin: "1rem 0" }}>
+                <strong>Select Interval(s):</strong>
+                <div>
+                  <input
+                    type="checkbox"
+                    checked={selectedIntervals.length === intervals.length}
+                    onChange={toggleAllIntervals}
+                  /> Select All
+                </div>
+                {intervals.map((intvl, idx) => (
+                  <div key={idx}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIntervals.some(i => JSON.stringify(i) === JSON.stringify(intvl))}
+                      onChange={() => toggleInterval(intvl)}
+                    />
+                    {intvl.start} to {intvl.end}
+                  </div>
+                ))}
+              </div>
+              <select onChange={(e) => setTreatmentMethod(e.target.value)} value={treatmentMethod}>
+                <option value="">Select Treatment Method</option>
+                <option value="Delete rows">Delete rows</option>
+                <option value="Forward fill">Forward fill</option>
+                <option value="Backward fill">Backward fill</option>
+                <option value="Mean">Mean</option>
+                <option value="Median">Median</option>
+              </select>
+              <button onClick={applyTreatment}>Apply Treatment</button>
+            </>
+          )}
+
+          {showOutlierOptions && (
+            <>
+              <select value={outlierMethod} onChange={(e) => setOutlierMethod(e.target.value)}>
+                <option value="zscore">Z-Score</option>
+                <option value="iqr">IQR</option>
+              </select>
+              <button onClick={handleOutlierAnalysis}>Run Outlier Analysis</button>
+            </>
+          )}
         </div>
-      </div>
+      )}
 
       <div>
-        <h3>Select Intervals</h3>
-        <label>
-          <input
-            type="checkbox"
-            checked={selectAllIntervals}
-            onChange={(e) => {
-              setSelectAllIntervals(e.target.checked);
-              setSelectedIntervals(e.target.checked ? [...intervals] : []);
-            }}
-          />
-          Select All
-        </label>
-        <div style={{ maxHeight: "150px", overflowY: "auto", border: "1px solid #ccc", padding: "5px" }}>
-          {intervals.map((interval, index) => (
-            <label key={index} style={{ display: "block" }}>
-              <input
-                type="checkbox"
-                checked={selectedIntervals.some(
-                  (i) => i.start === interval.start && i.end === interval.end
-                )}
-                onChange={() => {
-                  const exists = selectedIntervals.some(
-                    (i) => i.start === interval.start && i.end === interval.end
-                  );
-                  const updated = exists
-                    ? selectedIntervals.filter(
-                        (i) => !(i.start === interval.start && i.end === interval.end)
-                      )
-                    : [...selectedIntervals, interval];
-                  setSelectedIntervals(updated);
-                  setSelectAllIntervals(updated.length === intervals.length);
-                }}
-              />
-              {interval.start} to {interval.end}
-            </label>
-          ))}
-        </div>
+        <button onClick={downloadFile}>Download Treated File</button>
       </div>
 
-      <div>
-        <h3>Select Treatment Method</h3>
-        <select value={method} onChange={(e) => setMethod(e.target.value)}>
-          <option value="">--Select--</option>
-          <option value="Forward fill">Forward fill</option>
-          <option value="Backward fill">Backward fill</option>
-          <option value="Mean">Mean</option>
-          <option value="Median">Median</option>
-          <option value="Delete rows">Delete rows</option>
-        </select>
+      <div style={{ marginTop: "2rem" }}>
+        {response && <pre>{response}</pre>}
+        {plotData && <Plot data={plotData.data} layout={plotData.layout} />}
       </div>
-
-      <button onClick={handleTreatmentApply}>Apply Treatment</button>
-      <button onClick={handleDownload}>Download Treated File</button>
     </div>
   );
 }
