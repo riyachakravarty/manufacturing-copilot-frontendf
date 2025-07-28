@@ -8,7 +8,8 @@
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
     "react-plotly.js": "^2.6.0",
-    "plotly.js": "^2.32.0"
+    "plotly.js": "^2.32.0",
+    "react-select": "^5.7.4"
   },
   "scripts": {
     "start": "react-scripts start",
