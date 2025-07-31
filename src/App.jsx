@@ -40,7 +40,7 @@ const App = () => {
   const fetchColumns = async () => {
     const formData = new FormData();
     formData.append("file", file);
-    await axios.post(`${process.env.REACT_APP_BACKEND_URL}/upload`, formData, { ... });
+    await axios.post(`${process.env.REACT_APP_BACKEND_URL}/upload`, formData);
     const response = await axios.get("/get_columns");
     setColumns(response.data.columns);
   };
