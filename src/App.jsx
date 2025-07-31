@@ -22,10 +22,6 @@ const App = () => {
   const [selectedMissingValueColumn, setSelectedMissingValueColumn] = useState(null);
 
   useEffect(() => {
-    if (file) fetchColumns();
-  }, [file]);
-
-  useEffect(() => {
     if (selectAllIntervals) {
       setSelectedIntervals(intervals.map((_, idx) => idx));
     } else {
@@ -108,6 +104,7 @@ const App = () => {
       <h1>Manufacturing Analytics Tool</h1>
 
       <input type="file" onChange={(e) => setFile(e.target.files[0])} />
+      <button onClick={fetchColumns}>Upload</button>
 
       <div>
         <h2>Select Columns</h2>
