@@ -59,7 +59,7 @@ const fetchColumns = async () => {
 
   const handlePrompt = async (prompt) => {
     try {
-      const response = await axios.post("/chat", { prompt });
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/chat`, { prompt });
       if (response.data.type === "plot") {
         setPlotData(response.data.data);
       } else {
