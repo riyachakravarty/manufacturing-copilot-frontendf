@@ -46,15 +46,30 @@ const fetchColumns = async () => {
 };
 
   const fetchIntervals = async () => {
-    const response = await axios.get("/missing_datetime_intervals");
-    setIntervals(response.data.intervals);
+    try {
+      const response = await axios.get("/missing_datetime_intervals");
+      setIntervals(response.data.intervals || []);
+    } catch (err) {
+      console.error("Error fetching datetime intervals:", err);
+      setIntervals([]);
+    }
   };
 
+
   const fetchValueIntervals = async () => {
-    const response = await axios.post("/get_missing_value_intervals", {
-      column: selectedMissingValueColumn,
-    });
-    setValueIntervals(response.data.intervals);
+    if (!selectedMissingValueColumn) {
+      alert("Please select a column first.");
+      return;
+    }
+    try {
+      const response = await axios.post("/get_missing_value_intervals", {
+        column: selectedMissingValueColumn,
+      });
+      setValueIntervals(response.data.intervals || []);
+    } catch (err) {
+      console.error("Error fetching value intervals:", err);
+      setValueIntervals([]);
+    }
   };
 
   const handlePrompt = async (prompt) => {
