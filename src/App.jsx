@@ -37,13 +37,13 @@ const App = () => {
     }
   }, [selectAllColumns, columns]);
 
-const fetchColumns = async () => {
-  const formData = new FormData();
-  formData.append("file", file);
-  await axios.post(`${process.env.REACT_APP_BACKEND_URL}/upload`, formData);
-  const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/get_columns`);
-  setColumns(response.data.columns);
-};
+  const fetchColumns = async () => {
+    const formData = new FormData();
+    formData.append("file", file);
+    await axios.post(`${process.env.REACT_APP_BACKEND_URL}/upload`, formData);
+    const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/get_columns`);
+    setColumns(response.data.columns);
+  };
 
   const fetchIntervals = async () => {
     try {
@@ -55,28 +55,26 @@ const fetchColumns = async () => {
     }
   };
 
-
   const fetchValueIntervals = async () => {
-  if (!selectedMissingValueColumn) {
-    alert("Please select a column first.");
-    return;
-  }
-  try {
-    const response = await axios.get(
-      `${process.env.REACT_APP_BACKEND_URL}/missing_value_intervals`,
-      {
-        params: {
-          column: selectedMissingValueColumn,
-        },
-      }
-    );
-    setValueIntervals(response.data.intervals || []);
-  } catch (err) {
-    console.error("Error fetching value intervals:", err);
-    setValueIntervals([]);
-  }
-};
-
+    if (!selectedMissingValueColumn) {
+      alert("Please select a column first.");
+      return;
+    }
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_BACKEND_URL}/missing_value_intervals`,
+        {
+          params: {
+            column: selectedMissingValueColumn,
+          },
+        }
+      );
+      setValueIntervals(response.data.intervals || []);
+    } catch (err) {
+      console.error("Error fetching value intervals:", err);
+      setValueIntervals([]);
+    }
+  };
 
   const handlePrompt = async (prompt) => {
     try {
@@ -102,28 +100,26 @@ const fetchColumns = async () => {
     }
   };
 
-
   const applyTreatment = async () => {
-  try {
-    const payload = {
-      columns: selectedColumns,
-      intervals: selectedIntervals.map((i) => intervals[i]),
-      method: treatmentMethod,
-    };
+    try {
+      const payload = {
+        columns: selectedColumns,
+        intervals: selectedIntervals.map((i) => intervals[i]),
+        method: treatmentMethod,
+      };
 
-    const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/apply_treatment`, payload);
-    alert('Treatment applied successfully!');
-  } catch (error) {
-    console.error('Error applying treatment:', error);
-    alert('Failed to apply treatment. Please check console for details.');
-  }
-};
-
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/apply_treatment`, payload);
+      alert('Treatment applied successfully!');
+    } catch (error) {
+      console.error('Error applying treatment:', error);
+      alert('Failed to apply treatment. Please check console for details.');
+    }
+  };
 
   const applyValueTreatment = async () => {
     const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/apply_missing_value_treatment`, {
       column: selectedMissingValueColumn,
-      intervals: selectedValueIntervals,
+      intervals: selectedValueIntervals.map(idx => valueIntervals[idx]),
       treatment: treatmentMethod,
     });
     alert(response.data.message);
@@ -255,7 +251,7 @@ const fetchColumns = async () => {
                         )
                       }
                     />
-                    {interval}
+                    {interval.start} to {interval.end}
                   </label>
                 ))}
                 <select onChange={(e) => setTreatmentMethod(e.target.value)}>
