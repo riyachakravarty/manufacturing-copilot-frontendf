@@ -62,7 +62,7 @@ const fetchColumns = async () => {
       return;
     }
     try {
-      const response = await axios.post("/get_missing_value_intervals", {
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/get_missing_value_intervals`, {
         column: selectedMissingValueColumn,
       });
       setValueIntervals(response.data.intervals || []);
