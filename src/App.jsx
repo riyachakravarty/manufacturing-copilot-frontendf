@@ -97,7 +97,7 @@ const fetchColumns = async () => {
   };
 
   const applyTreatment = async () => {
-    const response = await axios.post("/apply_treatment", {
+    const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/apply_treatment`, {
       columns: selectedColumns,
       intervals: selectedIntervals,
       treatment: treatmentMethod,
