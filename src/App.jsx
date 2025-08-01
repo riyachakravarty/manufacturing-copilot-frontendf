@@ -139,14 +139,6 @@ const App = () => {
     }
   };
 
-  const applyValueTreatment = async () => {
-    const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/apply_missing_value_treatment`, {
-      column: selectedMissingValueColumn,
-      intervals: selectedValueIntervals.map(idx => valueIntervals[idx]),
-      treatment: treatmentMethod,
-    });
-    alert(response.data.message);
-  };
 
   const applyValueTreatment = async () => {
     const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/apply_missing_value_treatment`, {
