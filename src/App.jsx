@@ -244,9 +244,11 @@ const App = () => {
                   </label>
                 ))}
                 <select onChange={(e) => setTreatmentMethod(e.target.value)}>
-                  <option value="mean">Mean</option>
-                  <option value="median">Median</option>
-                  <option value="ffill">Forward Fill</option>
+                  <option value="Mean">Mean</option>
+                  <option value="Median">Median</option>
+                  <option value="Forward fill">Forward Fill</option>
+                  <option value="Backward fill">Backward Fill</option>
+                  <option value="Delete rows">Delete Rows</option>
                 </select>
                 <button onClick={applyTreatment}>Apply Treatment</button>
               </>
