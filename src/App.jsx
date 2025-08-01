@@ -148,6 +148,15 @@ const App = () => {
     alert(response.data.message);
   };
 
+  const applyValueTreatment = async () => {
+    const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/apply_missing_value_treatment`, {
+      columns: [selectedMissingValueColumn], // ✅ fix 'column' → 'columns' and wrap in array
+      intervals: selectedValueIntervals.map(idx => valueIntervals[idx]),
+      method: treatmentMethod                // ✅ fix 'treatment' → 'method'
+  });
+  alert(response.data.message);
+};
+
   return (
     <div>
       <h1>Manufacturing Analytics Tool</h1>
