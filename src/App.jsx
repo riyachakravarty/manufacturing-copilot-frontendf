@@ -115,7 +115,7 @@ const fetchColumns = async () => {
 
 
   const applyValueTreatment = async () => {
-    const response = await axios.post("/apply_missing_value_treatment", {
+    const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/apply_missing_value_treatment`, {
       column: selectedMissingValueColumn,
       intervals: selectedValueIntervals,
       treatment: treatmentMethod,
