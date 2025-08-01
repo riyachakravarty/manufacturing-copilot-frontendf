@@ -57,20 +57,26 @@ const fetchColumns = async () => {
 
 
   const fetchValueIntervals = async () => {
-    if (!selectedMissingValueColumn) {
-      alert("Please select a column first.");
-      return;
-    }
-    try {
-      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/missing_value_intervals`, {
-        column: selectedMissingValueColumn,
-      });
-      setValueIntervals(response.data.intervals || []);
-    } catch (err) {
-      console.error("Error fetching value intervals:", err);
-      setValueIntervals([]);
-    }
-  };
+  if (!selectedMissingValueColumn) {
+    alert("Please select a column first.");
+    return;
+  }
+  try {
+    const response = await axios.get(
+      `${process.env.REACT_APP_BACKEND_URL}/missing_value_intervals`,
+      {
+        params: {
+          column: selectedMissingValueColumn,
+        },
+      }
+    );
+    setValueIntervals(response.data.intervals || []);
+  } catch (err) {
+    console.error("Error fetching value intervals:", err);
+    setValueIntervals([]);
+  }
+};
+
 
   const handlePrompt = async (prompt) => {
     try {
