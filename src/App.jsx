@@ -282,9 +282,9 @@ const App = () => {
                   </label>
                 ))}
                 <select onChange={(e) => setTreatmentMethod(e.target.value)}>
-                  <option value="mean">Mean</option>
-                  <option value="median">Median</option>
-                  <option value="ffill">Forward Fill</option>
+                  <option value="Mean">Mean</option>
+                  <option value="Median">Median</option>
+                  <option value="Forward fill">Forward Fill</option>
                 </select>
                 <button onClick={applyValueTreatment}>Apply Missing Value Treatment</button>
               </>
