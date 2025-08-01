@@ -55,32 +55,49 @@ const App = () => {
     }
   };
 
-
-
   const fetchValueIntervals = async () => {
-  if (!selectedMissingValueColumn || typeof selectedMissingValueColumn !== "string") {
-    alert("Please select a valid column.");
-    return;
-  }
+    if (!selectedMissingValueColumn || typeof selectedMissingValueColumn !== "string") {
+      alert("Please select a valid column.");
+      return;
+    }
 
-  console.log("Column param sent to backend:", selectedMissingValueColumn);
+    console.log("Column param sent to backend:", selectedMissingValueColumn);
 
-  try {
-    const response = await axios.get(
-      `${process.env.REACT_APP_BACKEND_URL}/missing_value_intervals`,
-      {
-        params: {
-          column: selectedMissingValueColumn,
-        },
-      }
-    );
-    setValueIntervals(response.data.intervals || []);
-  } catch (err) {
-    console.error("Error fetching value intervals:", err);
-    setValueIntervals([]);
-  }
-};
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_BACKEND_URL}/missing_value_intervals`,
+        {
+          params: {
+            column: selectedMissingValueColumn,
+          },
+        }
+      );
+      setValueIntervals(response.data.intervals || []);
+    } catch (err) {
+      console.error("Error fetching value intervals:", err);
+      setValueIntervals([]);
+    }
+  };
 
+  const handleDownload = async () => {
+    try {
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/download`, {
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([response.data], { type: 'text/csv' });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', 'treated_data.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error downloading treated file:", error);
+      alert("No data available for download or an error occurred.");
+    }
+  };
 
   const handlePrompt = async (prompt) => {
     try {
@@ -137,6 +154,7 @@ const App = () => {
 
       <input type="file" onChange={(e) => setFile(e.target.files[0])} />
       <button onClick={fetchColumns}>Upload</button>
+      <button onClick={handleDownload}>Download Treated Data</button>
 
       <div>
         <h2>Select Columns</h2>
