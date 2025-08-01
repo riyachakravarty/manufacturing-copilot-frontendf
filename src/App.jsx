@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import Plot from "react-plotly.js";
-import "./App.css";
+// import './App.css';
 
 function App() {
   const [file, setFile] = useState(null);
