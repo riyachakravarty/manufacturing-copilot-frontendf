@@ -47,7 +47,7 @@ const fetchColumns = async () => {
 
   const fetchIntervals = async () => {
     try {
-      const response = await axios.get("/missing_datetime_intervals");
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/missing_datetime_intervals`);
       setIntervals(response.data.intervals || []);
     } catch (err) {
       console.error("Error fetching datetime intervals:", err);
