@@ -205,7 +205,7 @@ const fetchColumns = async () => {
                         )
                       }
                     />
-                    {interval}
+                    {interval.start} to {interval.end}
                   </label>
                 ))}
                 <select onChange={(e) => setTreatmentMethod(e.target.value)}>
