@@ -96,14 +96,23 @@ const fetchColumns = async () => {
     }
   };
 
+
   const applyTreatment = async () => {
-    const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/apply_treatment`, {
-      columns: selectedColumns,
-      intervals: selectedIntervals,
-      treatment: treatmentMethod,
-    });
-    alert(response.data.message);
-  };
+  try {
+    const payload = {
+      columns: selectedColumns.map((i) => columns[i]), // Ensure columns are selected
+      intervals: selectedIntervals.map((i) => intervals[i]), // Ensure intervals are selected
+      method: treatmentType, // Use the selected method
+    };
+
+    const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/apply_treatment`, payload);
+    setTreatmentResult(response.data);
+  } catch (error) {
+    console.error('Error applying treatment:', error);
+    alert('Failed to apply treatment. Please check console for details.');
+  }
+};
+
 
   const applyValueTreatment = async () => {
     const response = await axios.post("/apply_missing_value_treatment", {
