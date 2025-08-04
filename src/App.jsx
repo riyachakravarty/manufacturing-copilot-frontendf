@@ -144,7 +144,7 @@ const App = () => {
     const payload = {
       column: selectedMissingValueColumn,
       intervals: selectedValueIntervals.map(idx => valueIntervals[idx]),
-      treatment: treatmentMethod,
+      method: treatmentMethod,
     };
     console.log("Sending payload to backend:", payload); // ✅ Add this line
 
@@ -297,6 +297,8 @@ const App = () => {
                   <option value="Mean">Mean</option>
                   <option value="Median">Median</option>
                   <option value="Forward fill">Forward Fill</option>
+                  <option value="Backward fill">Backward Fill</option>
+                  <option value="Delete rows">Delete Rows</option>
                 </select>
                 <button onClick={applyValueTreatment}>Apply Missing Value Treatment</button>
               </>
