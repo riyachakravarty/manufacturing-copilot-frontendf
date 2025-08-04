@@ -141,13 +141,25 @@ const App = () => {
 
 
   const applyValueTreatment = async () => {
-    const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/apply_missing_value_treatment`, {
-      columns: [selectedMissingValueColumn], // ✅ fix 'column' → 'columns' and wrap in array
+    const payload = {
+      column: selectedMissingValueColumn,
       intervals: selectedValueIntervals.map(idx => valueIntervals[idx]),
-      method: treatmentMethod                // ✅ fix 'treatment' → 'method'
-  });
-  alert(response.data.message);
-};
+      treatment: treatmentMethod,
+    };
+    console.log("Sending payload to backend:", payload); // ✅ Add this line
+
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}/apply_missing_value_treatment`,
+        payload
+      );
+      alert(response.data.message);
+    } catch (error) {
+      console.error("Error applying treatment:", error); // Logs error details
+      alert("Failed to apply treatment.");
+    }
+  };
+
 
   return (
     <div>
